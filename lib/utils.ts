@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Currency, CURRENCY_SYMBOLS, Transaction, BusinessSummary, BusinessName } from "./types";
+import { toMAD } from "./rates";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -111,4 +112,39 @@ export function getCategoryTotals(
   return Object.entries(totals)
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount);
+}
+
+export function exportTransactionsCSV(transactions: Transaction[]): void {
+  const headers = [
+    "Date",
+    "Business",
+    "Type",
+    "Category",
+    "Description",
+    "Amount",
+    "Currency",
+    "MAD Equivalent",
+    "Added By",
+  ];
+
+  const rows = transactions.map((t) => [
+    t.date,
+    t.business_name ?? t.business_id,
+    t.type,
+    t.category,
+    `"${t.description.replace(/"/g, '""')}"`,
+    t.amount.toFixed(2),
+    t.currency,
+    toMAD(t.amount, t.currency).toFixed(2),
+    t.added_by,
+  ]);
+
+  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `transactions_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
