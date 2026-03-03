@@ -21,7 +21,10 @@ Create a `.env.local` file in the project root:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+APP_PASSWORD=your-shared-password
 ```
+
+`APP_PASSWORD` is the single shared password shown on the login screen. It is stored server-side only and never exposed to the browser. The session is saved in an `httpOnly` cookie valid for 30 days.
 
 ### 3. Run the dev server
 
