@@ -9,11 +9,13 @@ import {
   ListOrdered,
   LogOut,
   TrendingUp,
+  CalendarDays,
 } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ListOrdered },
+  { href: "/monthly", label: "Monthly Summary", icon: CalendarDays },
 ];
 
 export default function Sidebar() {

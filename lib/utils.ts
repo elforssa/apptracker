@@ -49,6 +49,56 @@ export function getBusinessSummaries(
   });
 }
 
+export interface MonthlyBusinessData {
+  income: number;
+  expenses: number;
+  profit: number;
+}
+
+export interface MonthlySummaryRow {
+  monthKey: string;
+  monthLabel: string;
+  businesses: Record<string, MonthlyBusinessData>;
+  totals: MonthlyBusinessData;
+}
+
+export function getMonthlySummaries(
+  transactions: Transaction[],
+  businesses: { id: string; name: BusinessName }[]
+): MonthlySummaryRow[] {
+  const map: Record<string, MonthlySummaryRow> = {};
+
+  transactions.forEach((t) => {
+    const [year, month] = t.date.split("-");
+    const key = `${year}-${month}`;
+    if (!map[key]) {
+      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const label = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      map[key] = {
+        monthKey: key,
+        monthLabel: label,
+        businesses: Object.fromEntries(
+          businesses.map((b) => [b.id, { income: 0, expenses: 0, profit: 0 }])
+        ),
+        totals: { income: 0, expenses: 0, profit: 0 },
+      };
+    }
+    const biz = map[key].businesses[t.business_id];
+    if (!biz) return;
+    if (t.type === "income") {
+      biz.income += t.amount;
+      map[key].totals.income += t.amount;
+    } else {
+      biz.expenses += t.amount;
+      map[key].totals.expenses += t.amount;
+    }
+    biz.profit = biz.income - biz.expenses;
+    map[key].totals.profit = map[key].totals.income - map[key].totals.expenses;
+  });
+
+  return Object.values(map).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+}
+
 export function getCategoryTotals(
   transactions: Transaction[]
 ): { category: string; amount: number }[] {
