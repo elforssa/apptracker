@@ -5,15 +5,17 @@ import { useApp } from "@/context/AppContext";
 import { Transaction, BUSINESSES } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toMAD, formatMAD } from "@/lib/rates";
-import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Loader2, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TransactionModal from "./TransactionModal";
+import InvoiceViewerModal from "./InvoiceViewerModal";
 
 export default function TransactionList() {
   const { transactions, loading, deleteTransaction } = useApp();
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -55,7 +57,18 @@ export default function TransactionList() {
           <div key={t.id} className="border border-slate-100 rounded-xl p-4 bg-white">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="min-w-0">
-                <p className="text-slate-800 font-semibold text-sm truncate">{t.description}</p>
+                <p className="text-slate-800 font-semibold text-sm truncate flex items-center gap-1.5">
+                  {t.description}
+                  {t.invoice_url && (
+                    <button
+                      onClick={() => setViewingInvoice(t.invoice_url!)}
+                      className="text-blue-400 hover:text-blue-600 transition-colors cursor-pointer flex-shrink-0"
+                      title="View invoice"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </p>
                 <p className="text-slate-400 text-xs mt-0.5">{formatDate(t.date)}</p>
               </div>
               <div className="text-right flex-shrink-0">
@@ -115,6 +128,7 @@ export default function TransactionList() {
               <th className="text-left text-xs font-medium text-slate-400 pb-3 pr-4">By</th>
               <th className="text-right text-xs font-medium text-slate-400 pb-3 pr-4">Amount</th>
               <th className="text-right text-xs font-medium text-slate-400 pb-3 pr-4">≈ MAD</th>
+              <th className="text-center text-xs font-medium text-slate-400 pb-3 pr-4">Invoice</th>
               <th className="text-right text-xs font-medium text-slate-400 pb-3">Actions</th>
             </tr>
           </thead>
@@ -154,6 +168,19 @@ export default function TransactionList() {
                     {formatMAD(toMAD(t.amount, t.currency))}
                   </span>
                 </td>
+                <td className="py-3 pr-4 text-center">
+                  {t.invoice_url ? (
+                    <button
+                      onClick={() => setViewingInvoice(t.invoice_url!)}
+                      className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
+                      title="View invoice"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <span className="text-slate-200">—</span>
+                  )}
+                </td>
                 <td className="py-3 text-right">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => setEditing(t)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer">
@@ -186,6 +213,13 @@ export default function TransactionList() {
         onClose={() => setEditing(null)}
         editingTransaction={editing}
       />
+
+      {viewingInvoice && (
+        <InvoiceViewerModal
+          url={viewingInvoice}
+          onClose={() => setViewingInvoice(null)}
+        />
+      )}
     </>
   );
 }

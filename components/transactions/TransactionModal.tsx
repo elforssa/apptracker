@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import {
   Transaction,
@@ -14,7 +14,8 @@ import {
   USERS,
   UserName,
 } from "@/lib/types";
-import { X } from "lucide-react";
+import { uploadToCloudinary } from "@/lib/cloudinary";
+import { X, Paperclip, Upload, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -39,6 +40,10 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
   const [form, setForm] = useState({ ...emptyForm, added_by: currentUser ?? "Maroine" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editingTransaction) {
@@ -52,11 +57,30 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
         date: editingTransaction.date,
         added_by: editingTransaction.added_by,
       });
+      setInvoiceUrl(editingTransaction.invoice_url ?? null);
     } else {
       setForm({ ...emptyForm, added_by: currentUser ?? "Maroine" });
+      setInvoiceUrl(null);
     }
     setError("");
+    setUploadError("");
   }, [editingTransaction, open, currentUser]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    setUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setInvoiceUrl(url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const categories = form.type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
@@ -83,6 +107,7 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
         description: form.description.trim(),
         date: form.date,
         added_by: form.added_by,
+        invoice_url: invoiceUrl ?? null,
       };
       if (editingTransaction) {
         await updateTransaction(editingTransaction.id, payload);
@@ -233,6 +258,54 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Invoice upload */}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Invoice / Receipt</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,application/pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {invoiceUrl ? (
+              <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <Paperclip className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <a
+                  href={invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline truncate flex-1"
+                >
+                  View attached file
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceUrl(null)}
+                  className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer flex-shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-slate-200 rounded-lg text-slate-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50 transition-all text-sm cursor-pointer disabled:opacity-50"
+              >
+                {uploading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+                ) : (
+                  <><Upload className="w-4 h-4" /> Attach JPG, PNG or PDF</>  
+                )}
+              </button>
+            )}
+            {uploadError && (
+              <p className="text-red-500 text-xs mt-1">{uploadError}</p>
+            )}
           </div>
 
           {error && (

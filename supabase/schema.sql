@@ -24,6 +24,9 @@ create index if not exists idx_transactions_date on transactions (date desc);
 create index if not exists idx_transactions_type on transactions (type);
 create index if not exists idx_transactions_added_by on transactions (added_by);
 
+-- Add invoice_url column (run this if upgrading an existing database)
+-- alter table transactions add column if not exists invoice_url text;
+
 -- Row Level Security (RLS) - enable and allow all for now (no auth)
 alter table transactions enable row level security;
 

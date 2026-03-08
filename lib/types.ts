@@ -42,6 +42,7 @@ export interface Transaction {
   description: string;
   date: string;
   added_by: UserName;
+  invoice_url?: string | null;
   created_at: string;
 }
 
