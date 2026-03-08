@@ -1,3 +1,16 @@
+const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB hard limit before processing
+
+export function isSafeCloudinaryUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+}
+
 export async function compressImage(file: File, maxSizeKB = 500): Promise<Blob> {
   if (!file.type.startsWith("image/")) return file;
 
@@ -43,6 +56,13 @@ export async function compressImage(file: File, maxSizeKB = 500): Promise<Blob> 
 }
 
 export async function uploadToCloudinary(file: File): Promise<string> {
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    throw new Error("Only JPG, PNG, and PDF files are accepted");
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    throw new Error("File must be under 10 MB");
+  }
+
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 

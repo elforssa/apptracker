@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, ExternalLink, FileText } from "lucide-react";
+import { X, ExternalLink, FileText, ShieldAlert } from "lucide-react";
+import { isSafeCloudinaryUrl } from "@/lib/cloudinary";
 
 interface Props {
   url: string;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function InvoiceViewerModal({ url, onClose }: Props) {
+  const safe = isSafeCloudinaryUrl(url);
   const isPDF = url.toLowerCase().includes(".pdf") || url.includes("/raw/");
 
   useEffect(() => {
@@ -48,7 +50,13 @@ export default function InvoiceViewerModal({ url, onClose }: Props) {
 
         {/* Content */}
         <div className="flex-1 overflow-auto bg-slate-100 flex items-center justify-center min-h-[300px]">
-          {isPDF ? (
+          {!safe ? (
+            <div className="flex flex-col items-center gap-3 p-8 text-center">
+              <ShieldAlert className="w-10 h-10 text-red-400" />
+              <p className="text-slate-600 text-sm font-medium">Invalid or unsafe URL</p>
+              <p className="text-slate-400 text-xs">This file cannot be displayed for security reasons.</p>
+            </div>
+          ) : isPDF ? (
             <div className="flex flex-col items-center gap-4 p-8 text-center">
               <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center">
                 <FileText className="w-8 h-8 text-red-500" />

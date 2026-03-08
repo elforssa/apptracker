@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { Transaction, BUSINESSES } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toMAD, formatMAD } from "@/lib/rates";
+import { isSafeCloudinaryUrl } from "@/lib/cloudinary";
 import { Pencil, Trash2, Loader2, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TransactionModal from "./TransactionModal";
@@ -59,7 +60,7 @@ export default function TransactionList() {
               <div className="min-w-0">
                 <p className="text-slate-800 font-semibold text-sm truncate flex items-center gap-1.5">
                   {t.description}
-                  {t.invoice_url && (
+                  {isSafeCloudinaryUrl(t.invoice_url) && (
                     <button
                       onClick={() => setViewingInvoice(t.invoice_url!)}
                       className="text-blue-400 hover:text-blue-600 transition-colors cursor-pointer flex-shrink-0"
@@ -169,7 +170,7 @@ export default function TransactionList() {
                   </span>
                 </td>
                 <td className="py-3 pr-4 text-center">
-                  {t.invoice_url ? (
+                  {isSafeCloudinaryUrl(t.invoice_url) ? (
                     <button
                       onClick={() => setViewingInvoice(t.invoice_url!)}
                       className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
