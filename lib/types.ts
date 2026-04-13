@@ -15,6 +15,7 @@ export type ExpenseCategory =
   | "Food & Entertainment"
   | "Translation"
   | "Legal"
+  | "Client Goods"
   | "Other";
 
 export type IncomeCategory =
@@ -79,6 +80,7 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   "Food & Entertainment",
   "Translation",
   "Legal",
+  "Client Goods",
   "Other",
 ];
 
