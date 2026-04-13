@@ -17,9 +17,9 @@ interface AppContextType {
   filters: TransactionFilters;
   setFilters: (filters: TransactionFilters) => void;
   fetchTransactions: () => Promise<void>;
-  addTransaction: (data: Omit<Transaction, "id" | "created_at" | "business_name">) => Promise<void>;
-  updateTransaction: (id: string, data: Partial<Omit<Transaction, "id" | "created_at" | "business_name">>) => Promise<void>;
-  deleteTransaction: (id: string) => Promise<void>;
+  addTransaction: (data: Omit<Transaction, "id" | "created_at" | "business_name">) => Promise<string>;
+  updateTransaction: (id: string, data: Partial<Omit<Transaction, "id" | "created_at" | "business_name">>) => Promise<string>;
+  deleteTransaction: (id: string) => Promise<string>;
 }
 
 const defaultFilters: TransactionFilters = {
@@ -27,6 +27,8 @@ const defaultFilters: TransactionFilters = {
   type: "all",
   category: "all",
   added_by: "all",
+  paid_from: "all",
+  reimbursed: "all",
   date_from: "",
   date_to: "",
 };
@@ -75,6 +77,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (filters.added_by !== "all") {
         query = query.eq("added_by", filters.added_by);
       }
+      if (filters.paid_from !== "all") {
+        query = query.eq("paid_from", filters.paid_from);
+      }
+      if (filters.reimbursed === "pending") {
+        query = query.eq("paid_from", "personal").eq("reimbursed", false);
+      } else if (filters.reimbursed === "reimbursed") {
+        query = query.eq("reimbursed", true);
+      }
       if (filters.date_from) {
         query = query.gte("date", filters.date_from);
       }
@@ -107,6 +117,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.from("transactions").insert([data]);
     if (error) throw error;
     await fetchTransactions();
+    return "added";
   };
 
   const updateTransaction = async (
@@ -119,6 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .eq("id", id);
     if (error) throw error;
     await fetchTransactions();
+    return "updated";
   };
 
   const deleteTransaction = async (id: string) => {
@@ -128,6 +140,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .eq("id", id);
     if (error) throw error;
     await fetchTransactions();
+    return "deleted";
   };
 
   return (

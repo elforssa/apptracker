@@ -125,6 +125,8 @@ export function exportTransactionsCSV(transactions: Transaction[]): void {
     "Currency",
     "MAD Equivalent",
     "Added By",
+    "Paid From",
+    "Reimbursed",
   ];
 
   const rows = transactions.map((t) => [
@@ -137,6 +139,8 @@ export function exportTransactionsCSV(transactions: Transaction[]): void {
     t.currency,
     toMAD(t.amount, t.currency).toFixed(2),
     t.added_by,
+    t.paid_from ?? "company",
+    t.paid_from === "personal" ? (t.reimbursed ? "Yes" : "No") : "",
   ]);
 
   const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");

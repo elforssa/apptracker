@@ -15,6 +15,8 @@ create table if not exists transactions (
   description text not null,
   date date not null,
   added_by text not null check (added_by in ('Maroine', 'Partner')),
+  paid_from text not null default 'company' check (paid_from in ('company', 'personal')),
+  reimbursed boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -26,6 +28,10 @@ create index if not exists idx_transactions_added_by on transactions (added_by);
 
 -- Add invoice_url column (run this if upgrading an existing database)
 -- alter table transactions add column if not exists invoice_url text;
+
+-- Add paid_from and reimbursed columns (run this if upgrading an existing database)
+-- alter table transactions add column if not exists paid_from text not null default 'company' check (paid_from in ('company', 'personal'));
+-- alter table transactions add column if not exists reimbursed boolean not null default false;
 
 -- Row Level Security (RLS) - enable and allow all for now (no auth)
 alter table transactions enable row level security;

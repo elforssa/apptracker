@@ -8,10 +8,12 @@ import TransactionModal from "@/components/transactions/TransactionModal";
 import { useApp } from "@/context/AppContext";
 import { exportTransactionsCSV } from "@/lib/utils";
 import { MAD_RATES } from "@/lib/rates";
+import { useToast } from "@/components/ui/Toast";
 import { Plus, Download, Info } from "lucide-react";
 
 export default function TransactionsPage() {
   const { transactions, loading } = useApp();
+  const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [ratesOpen, setRatesOpen] = useState(false);
 
@@ -29,7 +31,7 @@ export default function TransactionsPage() {
           <div className="flex items-center gap-2">
             {transactions.length > 0 && (
               <button
-                onClick={() => exportTransactionsCSV(transactions)}
+                onClick={() => { exportTransactionsCSV(transactions); toast("CSV exported"); }}
                 className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white text-slate-600 text-sm font-medium rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <Download className="w-4 h-4" />
@@ -88,6 +90,14 @@ export default function TransactionsPage() {
               {transactions.filter((t) => t.type === "expense").length} expenses
             </span>
           </div>
+          {transactions.filter((t) => t.paid_from === "personal" && !t.reimbursed).length > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-amber-700 text-xs font-medium">
+                {transactions.filter((t) => t.paid_from === "personal" && !t.reimbursed).length} pending reimbursements
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Filters */}

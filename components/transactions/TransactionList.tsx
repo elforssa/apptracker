@@ -6,22 +6,42 @@ import { Transaction, BUSINESSES } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toMAD, formatMAD } from "@/lib/rates";
 import { isSafeCloudinaryUrl } from "@/lib/cloudinary";
-import { Pencil, Trash2, Loader2, Paperclip } from "lucide-react";
+import { Pencil, Trash2, Loader2, Paperclip, Wallet, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
 import TransactionModal from "./TransactionModal";
 import InvoiceViewerModal from "./InvoiceViewerModal";
 
 export default function TransactionList() {
-  const { transactions, loading, deleteTransaction } = useApp();
+  const { transactions, loading, deleteTransaction, updateTransaction } = useApp();
+  const { toast } = useToast();
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<string | null>(null);
+  const [togglingReimbursed, setTogglingReimbursed] = useState<string | null>(null);
+
+  const handleToggleReimbursed = async (t: Transaction) => {
+    if (togglingReimbursed) return;
+    setTogglingReimbursed(t.id);
+    try {
+      await updateTransaction(t.id, { reimbursed: !t.reimbursed });
+      toast(t.reimbursed ? "Marked as pending" : "Marked as reimbursed");
+    } catch {
+      toast("Failed to update reimbursement status", "error");
+    } finally {
+      setTogglingReimbursed(null);
+    }
+  };
 
   const handleDelete = async (id: string) => {
+    if (deletingId) return;
     setDeletingId(id);
     try {
       await deleteTransaction(id);
+      toast("Transaction deleted");
+    } catch {
+      toast("Failed to delete transaction", "error");
     } finally {
       setDeletingId(null);
       setConfirmDelete(null);
@@ -89,6 +109,15 @@ export default function TransactionList() {
               </span>
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{t.category}</span>
               <span className="text-xs text-slate-400">by {t.added_by}</span>
+              {t.paid_from === "personal" && (
+                <span className={cn(
+                  "inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
+                  t.reimbursed ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                )}>
+                  <Wallet className="w-3 h-3" />
+                  {t.reimbursed ? "Reimbursed" : "Pending"}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 pt-2 border-t border-slate-50">
               <button
@@ -97,6 +126,21 @@ export default function TransactionList() {
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
+              {t.paid_from === "personal" && (
+                <button
+                  onClick={() => handleToggleReimbursed(t)}
+                  disabled={togglingReimbursed === t.id}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                    t.reimbursed
+                      ? "text-amber-600 hover:bg-amber-50"
+                      : "text-emerald-600 hover:bg-emerald-50"
+                  )}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {togglingReimbursed === t.id ? "..." : t.reimbursed ? "Undo" : "Reimburse"}
+                </button>
+              )}
               {confirmDelete === t.id ? (
                 <div className="flex-1 flex items-center justify-center gap-1.5">
                   <button onClick={() => handleDelete(t.id)} disabled={deletingId === t.id} className="flex-1 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium cursor-pointer">
@@ -127,6 +171,7 @@ export default function TransactionList() {
               <th className="text-left text-xs font-medium text-slate-400 pb-3 pr-4">Business</th>
               <th className="text-left text-xs font-medium text-slate-400 pb-3 pr-4">Category</th>
               <th className="text-left text-xs font-medium text-slate-400 pb-3 pr-4">By</th>
+              <th className="text-left text-xs font-medium text-slate-400 pb-3 pr-4">Paid</th>
               <th className="text-right text-xs font-medium text-slate-400 pb-3 pr-4">Amount</th>
               <th className="text-right text-xs font-medium text-slate-400 pb-3 pr-4">≈ MAD</th>
               <th className="text-center text-xs font-medium text-slate-400 pb-3 pr-4">Invoice</th>
@@ -157,6 +202,26 @@ export default function TransactionList() {
                     </div>
                     <span className="text-xs text-slate-500">{t.added_by}</span>
                   </div>
+                </td>
+                <td className="py-3 pr-4">
+                  {t.paid_from === "personal" ? (
+                    <button
+                      onClick={() => handleToggleReimbursed(t)}
+                      disabled={togglingReimbursed === t.id}
+                      className={cn(
+                        "inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full transition-colors cursor-pointer",
+                        t.reimbursed
+                          ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                          : "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                      )}
+                      title={t.reimbursed ? "Click to mark as pending" : "Click to mark as reimbursed"}
+                    >
+                      {t.reimbursed ? <CheckCircle2 className="w-3 h-3" /> : <Wallet className="w-3 h-3" />}
+                      {togglingReimbursed === t.id ? "..." : t.reimbursed ? "Reimbursed" : "Personal"}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-slate-400">Company</span>
+                  )}
                 </td>
                 <td className="py-3 pr-4 text-right whitespace-nowrap">
                   <span className={cn("font-semibold", t.type === "income" ? "text-emerald-600" : "text-red-500")}>

@@ -12,9 +12,12 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   USERS,
+  PAID_FROM_OPTIONS,
   UserName,
+  PaidFrom,
 } from "@/lib/types";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { useToast } from "@/components/ui/Toast";
 import { X, Paperclip, Upload, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,10 +36,12 @@ const emptyForm = {
   description: "",
   date: new Date().toISOString().split("T")[0],
   added_by: "Maroine" as UserName,
+  paid_from: "company" as PaidFrom,
 };
 
 export default function TransactionModal({ open, onClose, editingTransaction }: Props) {
   const { currentUser, addTransaction, updateTransaction } = useApp();
+  const { toast } = useToast();
   const [form, setForm] = useState({ ...emptyForm, added_by: currentUser ?? "Maroine" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -56,6 +61,7 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
         description: editingTransaction.description,
         date: editingTransaction.date,
         added_by: editingTransaction.added_by,
+        paid_from: editingTransaction.paid_from ?? "company",
       });
       setInvoiceUrl(editingTransaction.invoice_url ?? null);
     } else {
@@ -85,7 +91,12 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
   const categories = form.type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
   const handleTypeChange = (t: TransactionType) => {
-    setForm((f) => ({ ...f, type: t, category: "" as Category }));
+    setForm((f) => ({
+      ...f,
+      type: t,
+      category: "" as Category,
+      paid_from: t === "income" ? "company" as PaidFrom : f.paid_from,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +109,7 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
 
     setSaving(true);
     try {
+      const paidFrom = form.type === "income" ? "company" : form.paid_from;
       const payload = {
         business_id: form.business_id,
         type: form.type,
@@ -107,16 +119,21 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
         description: form.description.trim(),
         date: form.date,
         added_by: form.added_by,
+        paid_from: paidFrom,
+        reimbursed: paidFrom === "company" ? false : (editingTransaction?.reimbursed ?? false),
         invoice_url: invoiceUrl ?? null,
       };
       if (editingTransaction) {
         await updateTransaction(editingTransaction.id, payload);
+        toast("Transaction updated");
       } else {
         await addTransaction(payload);
+        toast("Transaction added");
       }
       onClose();
     } catch (err) {
       setError("Failed to save. Check your connection and try again.");
+      toast("Failed to save transaction", "error");
       console.error(err);
     } finally {
       setSaving(false);
@@ -260,6 +277,37 @@ export default function TransactionModal({ open, onClose, editingTransaction }: 
               </select>
             </div>
           </div>
+
+          {/* Paid from toggle — only for expenses */}
+          {form.type === "expense" && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">Paid From</label>
+              <div className="grid grid-cols-2 gap-2">
+                {PAID_FROM_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, paid_from: opt.value }))}
+                    className={cn(
+                      "py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer",
+                      form.paid_from === opt.value
+                        ? opt.value === "company"
+                          ? "bg-slate-700 text-white border-slate-700"
+                          : "bg-amber-500 text-white border-amber-500"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {form.paid_from === "personal" && (
+                <p className="text-xs text-amber-600 mt-1.5">
+                  This expense was paid from a personal account and will need reimbursement.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Invoice upload */}
           <div>

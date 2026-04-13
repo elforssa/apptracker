@@ -2,6 +2,7 @@ export type BusinessName = "China Mastery" | "RUYA Services";
 export type UserName = "Maroine" | "Partner";
 export type Currency = "CNY" | "MAD" | "USD" | "EUR";
 export type TransactionType = "expense" | "income";
+export type PaidFrom = "company" | "personal";
 
 export type ExpenseCategory =
   | "Travel"
@@ -42,6 +43,8 @@ export interface Transaction {
   description: string;
   date: string;
   added_by: UserName;
+  paid_from: PaidFrom;
+  reimbursed: boolean;
   invoice_url?: string | null;
   created_at: string;
 }
@@ -51,6 +54,8 @@ export interface TransactionFilters {
   type: TransactionType | "all";
   category: Category | "all";
   added_by: UserName | "all";
+  paid_from: PaidFrom | "all";
+  reimbursed: "all" | "pending" | "reimbursed";
   date_from: string;
   date_to: string;
 }
@@ -83,6 +88,11 @@ export const INCOME_CATEGORIES: IncomeCategory[] = [
   "Commission",
   "Service Fee",
   "Other",
+];
+
+export const PAID_FROM_OPTIONS: { value: PaidFrom; label: string }[] = [
+  { value: "company", label: "Company" },
+  { value: "personal", label: "Personal" },
 ];
 
 export const CURRENCIES: Currency[] = ["CNY", "MAD", "USD", "EUR"];

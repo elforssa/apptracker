@@ -17,6 +17,8 @@ const defaultFilters: TFilters = {
   type: "all",
   category: "all",
   added_by: "all",
+  paid_from: "all",
+  reimbursed: "all",
   date_from: "",
   date_to: "",
 };
@@ -119,7 +121,7 @@ export default function TransactionFilters() {
       </div>
 
       {open && (
-        <div className="mt-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="mt-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
             <select
@@ -149,6 +151,36 @@ export default function TransactionFilters() {
               {USERS.map((u) => (
                 <option key={u} value={u}>{u}</option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Paid from</label>
+            <select
+              value={filters.paid_from}
+              onChange={(e) =>
+                setFilters({ ...filters, paid_from: e.target.value as TFilters["paid_from"] })
+              }
+              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="all">All</option>
+              <option value="company">Company</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Reimbursement</label>
+            <select
+              value={filters.reimbursed}
+              onChange={(e) =>
+                setFilters({ ...filters, reimbursed: e.target.value as TFilters["reimbursed"] })
+              }
+              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="reimbursed">Reimbursed</option>
             </select>
           </div>
 
